@@ -19,6 +19,10 @@
  */
 
 #include <bm/bm_sim/stateful.h>
+#include <bm/bm_sim/debugger.h>
+#include <bm/bm_sim/packet.h>
+#include <bm/bm_sim/logger.h>
+#include <bm/bm_sim/event_logger.h>
 
 #include <iterator>  // std::distance
 #include <string>
@@ -41,8 +45,10 @@ RegisterArray::RegisterArray(const std::string &name, p4object_id_t id,
                              size_t size, int bitwidth)
     : NamedP4Object(name, id), bitwidth(bitwidth) {
   registers.reserve(size);
-  for (size_t i = 0; i < size; i++)
+  for (size_t i = 0; i < size; i++) {
     registers.emplace_back(bitwidth, this);
+    BMLOG_TRACE("Created register {} size {}\n", i, bitwidth);
+  }
 }
 
 void
@@ -67,8 +73,10 @@ RegisterArray::register_notifier(Notifier notifier) {
 
 void
 RegisterArray::notify(const Register &reg) const {
+  int dist = std::distance(&registers[0], &reg);
+  BMLOG_TRACE("Notify write on register {} of size {}", dist, bitwidth);
   for (const auto &notifier : notifiers)
-    notifier(std::distance(&registers[0], &reg));
+    notifier(dist);
 }
 
 void
